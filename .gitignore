@@ -24,3 +24,4 @@ __pycache__/
 *.txt
 
 !requirements.txt
+!stop_hinglish.txt
