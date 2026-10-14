@@ -13,10 +13,14 @@ def process(data):
     })
 
     #converting the date column 
+    
     df['date'] = pd.to_datetime(
-        df['date'],
-        format='%d/%m/%y, %H:%M - '
+        df['date'].str.replace(r'\s+-\s*$', '', regex=True),
+        format='mixed',
+        dayfirst=True,
+        errors='coerce'
     )
+
 
     #separating user and msgs
     users = []

@@ -274,6 +274,9 @@ def most_common_words(selected_user, df, stopword_file='stop_hinglish.txt'):
         message_words = re.findall(r'\b\w+\b', str(message).lower())
 
         for word in message_words:
+
+            if word in ['media', 'omitted']:
+                continue
             if word not in stop_words and not word.isdigit():
                 words.append(word)
 
@@ -426,3 +429,111 @@ def user_median_message_length(df):
         'median_message_length',
         ascending=False
     )
+
+
+
+def weekday_activity(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Exclude system notifications
+    df = df[df['user'] != 'group_notification']
+
+    # Get the weekday for every message
+    df = df.copy()
+    df['day_name'] = df['date'].dt.day_name()
+
+    # Keep weekdays in calendar order
+    days = [
+        'Monday', 'Tuesday', 'Wednesday',
+        'Thursday', 'Friday', 'Saturday', 'Sunday'
+    ]
+
+    counts = df['day_name'].value_counts()
+
+    return [
+        {'day': day, 'message_count': int(counts.get(day, 0))}
+        for day in days
+    ]
+
+
+def daily_timeline(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Exclude system notifications
+    df = df[df['user'] != 'group_notification']
+
+    df = df.copy()
+    df['date_only'] = df['date'].dt.date
+
+    daily_counts = (
+        df.groupby('date_only')
+        .size()
+        .reset_index(name='message_count')
+        .sort_values('date_only')
+    )
+
+    return [
+        {
+            'date': str(row['date_only']),
+            'message_count': int(row['message_count'])
+        }
+        for _, row in daily_counts.iterrows()
+    ]
+
+
+def hourly_activity(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Exclude system notifications
+    df = df[df['user'] != 'group_notification']
+
+    df = df.copy()
+    df['hour'] = df['date'].dt.hour
+
+    counts = df['hour'].value_counts()
+
+    return [
+        {
+            'hour': hour,
+            'label': f'{hour:02d}:00',
+            'message_count': int(counts.get(hour, 0))
+        }
+        for hour in range(24)
+    ]
+
+
+def activity_heatmap(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Exclude system notifications
+    df = df[df['user'] != 'group_notification']
+
+    df = df.copy()
+    df['day'] = df['date'].dt.day_name()
+    df['hour'] = df['date'].dt.hour
+
+    days = [
+        'Monday', 'Tuesday', 'Wednesday',
+        'Thursday', 'Friday', 'Saturday', 'Sunday'
+    ]
+
+    counts = (
+        df.groupby(['day', 'hour'])
+        .size()
+        .to_dict()
+    )
+
+    return [
+        {
+            'day': day,
+            'hour': hour,
+            'label': f'{hour:02d}:00',
+            'message_count': int(counts.get((day, hour), 0))
+        }
+        for day in days
+        for hour in range(24)
+    ]
